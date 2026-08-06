@@ -428,14 +428,19 @@ def handle_main_select(obs: Observation) -> list[int]:
                         if opp_state.active and opp_state.active[0] and count_energy(opp_state.active[0]) >= 1:
                             active_threatened = True
 
-                # Starmie Energy Allocation Policy:
-                # 1. Active needs at least 1 energy for Jetting Blow (score 1000)
-                # 2. Benched Starmie/Staryu needs 1 energy for backup readiness (score 900)
-                # 3. Additional energy to active for Nebula Beam / reserve (score 100 - count)
+                # Starmie Dynamic Energy Allocation Policy:
+                # 1. Active 1st energy (score 1000) -> unlocks Jetting Blow (120 dmg + 50 bench snipe)
+                # 2. Active 2nd energy if opponent HP > 120 (score 950) -> unlocks Nebula Beam (210 dmg / 260 with Belt!)
+                # 3. Benched backup 1st energy (score 900) -> backup attacker readiness
+                # 4. Additional energy -> active reserve (score 100 - count)
                 curr_energy = count_energy(target_pkmn)
+                opp_act_hp = opp_state.active[0].hp if (opp_state.active and opp_state.active[0]) else 0
+                
                 if target_area == AreaType.ACTIVE:
                     if curr_energy == 0:
                         score = 1000
+                    elif curr_energy == 1 and opp_act_hp > 120:
+                        score = 950
                     else:
                         score = 100 - curr_energy
                 elif target_area == AreaType.BENCH and target_pkmn.id in (MEGA_STARMIE_ID, STARYU_ID):
