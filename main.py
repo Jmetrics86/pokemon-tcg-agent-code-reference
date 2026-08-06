@@ -341,10 +341,26 @@ def handle_main_select(obs: Observation) -> list[int]:
                 if opp_state.handCount >= 6 and len(hand) <= 4:
                     judge_priority = True
                     
+                # Supporter Selection Strategy:
+                # 1. Boss's Orders if guaranteed KO or high threat gust
+                # 2. Judge if opponent hand >= 6 and our hand <= 4 (hand disruption)
+                # 3. Cyrano if Mega Starmie ex is not yet in hand or in play (tutor search)
+                # 4. Lillie's Determination / Waitress (main draw engines)
+                has_starmie_hand_or_play = False
+                if any(c.id == MEGA_STARMIE_ID for c in hand):
+                    has_starmie_hand_or_play = True
+                elif my_active and my_active.id == MEGA_STARMIE_ID:
+                    has_starmie_hand_or_play = True
+                elif any(b.id == MEGA_STARMIE_ID for b in my_state.bench):
+                    has_starmie_hand_or_play = True
+                    
+                cyrano_priority = not has_starmie_hand_or_play
+
                 dynamic_supporters = []
                 if boss_priority: dynamic_supporters.append(BOSS_ORDERS_ID)
                 if judge_priority: dynamic_supporters.append(JUDGE_ID)
-                dynamic_supporters.extend([LILLIES_ID, CYRANO_ID, WAITRESS_ID])
+                if cyrano_priority: dynamic_supporters.append(CYRANO_ID)
+                dynamic_supporters.extend([LILLIES_ID, WAITRESS_ID, CYRANO_ID])
                 if not boss_priority: dynamic_supporters.append(BOSS_ORDERS_ID)
                 if not judge_priority: dynamic_supporters.append(JUDGE_ID)
                 
@@ -568,8 +584,14 @@ def handle_card_select(obs: Observation) -> list[int]:
 
     elif context == SelectContext.TO_HAND:
         # Retrieve from deck/discard: prioritize what we need most
-        priority = [MEGA_STARMIE_ID, STARYU_ID, MEGA_SIGNAL_ID, 
-                    BUDDY_BUDDY_POFFIN_ID, WATER_ENERGY_ID, LILLIES_ID]
+        has_energy_in_hand = any(c.id == WATER_ENERGY_ID for c in my_state.hand)
+        
+        if not has_energy_in_hand:
+            priority = [WATER_ENERGY_ID, MEGA_STARMIE_ID, STARYU_ID, MEGA_SIGNAL_ID, 
+                        BUDDY_BUDDY_POFFIN_ID, LILLIES_ID]
+        else:
+            priority = [MEGA_STARMIE_ID, STARYU_ID, WATER_ENERGY_ID, MEGA_SIGNAL_ID, 
+                        BUDDY_BUDDY_POFFIN_ID, LILLIES_ID]
         picks = []
         for target_id in priority:
             for i, opt in enumerate(options):
@@ -614,28 +636,35 @@ def handle_card_select(obs: Observation) -> list[int]:
         return picks[:max_count]
 
     elif context == SelectContext.DAMAGE or context == SelectContext.DAMAGE_COUNTER:
-        # Target opponent's Pokemon with lowest HP (try to take KOs)
+        # Precision Bench Snipe Engine: Prioritize targets <= 50 HP for immediate Prize KO
         opp_state = state.players[1 - me]
-        best = None
-        best_hp = float('inf')
+        best_idx = None
+        best_score = -10000
+
         for i, opt in enumerate(options):
+            score = 0
             if opt.playerIndex == 1 - me:
-                # Try to find the HP of the targeted Pokemon
-                if opt.area == AreaType.ACTIVE and opp_state.active:
-                    hp = opp_state.active[0].hp if opp_state.active[0] else 999
-                elif opt.area == AreaType.BENCH and opt.index is not None:
-                    if opt.index < len(opp_state.bench):
-                        hp = opp_state.bench[opt.index].hp
+                target_pkmn = None
+                if opt.area == AreaType.ACTIVE and opp_state.active and opp_state.active[0]:
+                    target_pkmn = opp_state.active[0]
+                elif opt.area == AreaType.BENCH and opt.index is not None and opt.index < len(opp_state.bench):
+                    target_pkmn = opp_state.bench[opt.index]
+
+                if target_pkmn:
+                    hp = target_pkmn.hp
+                    energy = count_energy(target_pkmn)
+                    # Prize KO Check: Placing 50 dmg on <= 50 HP target yields an immediate KO!
+                    if 1 <= hp <= 50:
+                        score = 20000 + energy * 100 + target_pkmn.maxHp
                     else:
-                        hp = 999
-                else:
-                    hp = 999
-                if hp < best_hp:
-                    best_hp = hp
-                    best = i
-        if best is not None:
-            return [best]
-        return [0]
+                        # Secondary: Target high-energy benched threat or lowest HP
+                        score = energy * 500 + (1000 - hp)
+
+            if score > best_score:
+                best_score = score
+                best_idx = i
+
+        return [best_idx if best_idx is not None else 0]
 
     elif context == SelectContext.TO_BENCH:
         # Bench a Pokemon — prefer Staryu/Sobble
