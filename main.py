@@ -145,29 +145,40 @@ ATTACK_DAMAGE = {
     1053: 110   # Water Shot (Inteleon)
 }
 
+STATIC_STARMIE_DECK = (
+    [STARYU_ID]*4 +
+    [MEGA_STARMIE_ID]*4 +
+    [SQUAWKABILLY_ID]*1 +
+    [BUDDY_BUDDY_POFFIN_ID]*4 +
+    [MEGA_SIGNAL_ID]*4 +
+    [POKEGEAR_ID]*4 +
+    [LILLIES_ID]*4 +
+    [WAITRESS_ID]*2 +
+    [BOSS_ORDERS_ID]*2 +
+    [CYRANO_ID]*2 +
+    [NIGHT_STRETCHER_ID]*2 +
+    [SWITCH_ID]*2 +
+    [JUDGE_ID]*1 +
+    [MAXIMUM_BELT_ID]*1 +
+    [WATER_ENERGY_ID]*23
+)
+
 def read_deck_csv() -> list[int]:
-    # Check standard paths in order
-    paths_to_try = [
-        "deck.csv",
-        "/kaggle_simulations/agent/deck.csv",
-        "submission/deck.csv"
-    ]
-    file_path = None
-    for p in paths_to_try:
-        if os.path.exists(p):
-            file_path = p
-            break
-            
-    if file_path is None:
-        # Fallback
-        file_path = "/kaggle_simulations/agent/deck.csv"
-        
-    with open(file_path, "r") as file:
-        csv = file.read().split("\n")
-    deck = []
-    for i in range(60):
-        deck.append(int(csv[i].strip()))
-    return deck
+    try:
+        paths_to_try = [
+            "deck.csv",
+            "/kaggle_simulations/agent/deck.csv",
+            "submission/deck.csv"
+        ]
+        for p in paths_to_try:
+            if os.path.exists(p):
+                with open(p, "r") as f:
+                    lines = [line.strip() for line in f.read().split("\n") if line.strip()]
+                    if len(lines) >= 60:
+                        return [int(lines[i]) for i in range(60)]
+    except Exception:
+        pass
+    return list(STATIC_STARMIE_DECK)
 
 
 # ── Utility helpers ─────────────────────────────────────────────────────────
@@ -750,19 +761,19 @@ def handle_energy_select(obs: Observation) -> list[int]:
 
 def agent(obs_dict: dict) -> list[int]:
     """Main agent entry point."""
-    obs: Observation = to_observation_class(obs_dict)
-    
-    # Initial deck selection
-    if obs.select is None:
-        return read_deck_csv()
-    
-    select = obs.select
-    select_type = select.type
-    min_count = select.minCount
-    max_count = select.maxCount
-    options = select.option
-
     try:
+        obs: Observation = to_observation_class(obs_dict)
+        
+        # Initial deck selection
+        if obs.select is None:
+            return read_deck_csv()
+        
+        select = obs.select
+        select_type = select.type
+        min_count = select.minCount
+        max_count = select.maxCount
+        options = select.option
+
         if select_type == SelectType.MAIN:
             result = handle_main_select(obs)
         elif select_type == SelectType.CARD:
