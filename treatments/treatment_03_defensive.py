@@ -19,10 +19,10 @@ from cg.api import (
 # ── Trained DSVN Value Head Coefficients (10,614 State Samples) ───────────
 DSVN_BIAS = 0.164533
 DSVN_WEIGHTS = [
-    0.001550,   # my_active_hp
+    0.015000,   # my_active_hp
     0.045745,   # my_active_energy
     0.000326,   # my_bench_hp_total
-    0.204046,   # my_bench_energy_total
+    0.350000,   # my_bench_energy_total
     0.081985,   # my_prizes_taken
     0.015082,   # my_hand_count
     0.005994,   # my_deck_count
@@ -296,7 +296,6 @@ def handle_main_select(obs: Observation) -> list[int]:
         if hand:
             # Priority order for items/supporters
             priority_items = [
-                MEGA_SIGNAL_ID,
                 BUDDY_BUDDY_POFFIN_ID,  # Search for basics
                 MEGA_SIGNAL_ID,         # Search for evolutions
                 POKEGEAR_ID,            # Find supporters
@@ -347,7 +346,7 @@ def handle_main_select(obs: Observation) -> list[int]:
                 # 2. Judge if opponent hand >= 6 and our hand <= 4 (hand disruption)
                 # 3. Cyrano if Mega Starmie ex is not yet in hand or in play (tutor search)
                 # 4. Lillie's Determination / Waitress (main draw engines)
-                has_starmie_hand_or_play = True
+                has_starmie_hand_or_play = False
                 if any(c.id == MEGA_STARMIE_ID for c in hand):
                     has_starmie_hand_or_play = True
                 elif my_active and my_active.id == MEGA_STARMIE_ID:
@@ -481,7 +480,7 @@ def handle_main_select(obs: Observation) -> list[int]:
     # ── PRIORITY 6: Retreat if active is damaged and bench has healthy attacker
     if retreats and my_state.active:
         active = my_state.active[0]
-        if active and active.hp < active.maxHp * 0.3:
+        if active and active.hp < active.maxHp * 0.5:
             # Only retreat if we have a better option on bench
             for bench_pkmn in my_state.bench:
                 if bench_pkmn.id == MEGA_STARMIE_ID and bench_pkmn.hp > active.hp:

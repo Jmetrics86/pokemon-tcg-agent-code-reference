@@ -48,7 +48,7 @@ def evaluate_dsvn_win_probability(obs: Observation, player_idx: int) -> float:
     my_act = my_state.active[0] if (my_state.active and my_state.active[0]) else None
     opp_act = opp_state.active[0] if (opp_state.active and opp_state.active[0]) else None
     
-    f1 = float(my_act.hp) if my_act else 0.0
+    f1 = float(my_act.hp)**0.5 if my_act else 0.0
     f2 = float(count_energy(my_act)) if my_act else 0.0
     f3 = float(sum(b.hp for b in my_state.bench))
     f4 = float(sum(count_energy(b) for b in my_state.bench))
@@ -62,7 +62,7 @@ def evaluate_dsvn_win_probability(obs: Observation, player_idx: int) -> float:
         if b.id == MEGA_STARMIE_ID: starmie_count += 1.0
     f8 = starmie_count
     
-    f9 = float(opp_act.hp) if opp_act else 0.0
+    f9 = float(opp_act.hp)**0.5 if opp_act else 0.0
     f10 = float(count_energy(opp_act)) if opp_act else 0.0
     f11 = float(len(opp_state.bench))
     f12 = float(6 - len(opp_state.prize))
@@ -296,7 +296,6 @@ def handle_main_select(obs: Observation) -> list[int]:
         if hand:
             # Priority order for items/supporters
             priority_items = [
-                MEGA_SIGNAL_ID,
                 BUDDY_BUDDY_POFFIN_ID,  # Search for basics
                 MEGA_SIGNAL_ID,         # Search for evolutions
                 POKEGEAR_ID,            # Find supporters
@@ -347,7 +346,7 @@ def handle_main_select(obs: Observation) -> list[int]:
                 # 2. Judge if opponent hand >= 6 and our hand <= 4 (hand disruption)
                 # 3. Cyrano if Mega Starmie ex is not yet in hand or in play (tutor search)
                 # 4. Lillie's Determination / Waitress (main draw engines)
-                has_starmie_hand_or_play = True
+                has_starmie_hand_or_play = False
                 if any(c.id == MEGA_STARMIE_ID for c in hand):
                     has_starmie_hand_or_play = True
                 elif my_active and my_active.id == MEGA_STARMIE_ID:

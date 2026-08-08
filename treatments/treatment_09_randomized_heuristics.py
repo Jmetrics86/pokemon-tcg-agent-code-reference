@@ -73,7 +73,7 @@ def evaluate_dsvn_win_probability(obs: Observation, player_idx: int) -> float:
     f16 = (opp_dmg - f1) if my_act else 0.0
     
     feats = [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16]
-    z = sum(DSVN_WEIGHTS[j] * feats[j] for j in range(16)) + DSVN_BIAS
+    z = sum(DSVN_WEIGHTS[j] * feats[j] for j in range(16)) + DSVN_BIAS + random.uniform(-0.5, 0.5)
     return 1.0 / (1.0 + math.exp(-max(min(z, 20.0), -20.0)))
 
 # ── Card ID constants for our deck ──────────────────────────────────────────
@@ -296,7 +296,6 @@ def handle_main_select(obs: Observation) -> list[int]:
         if hand:
             # Priority order for items/supporters
             priority_items = [
-                MEGA_SIGNAL_ID,
                 BUDDY_BUDDY_POFFIN_ID,  # Search for basics
                 MEGA_SIGNAL_ID,         # Search for evolutions
                 POKEGEAR_ID,            # Find supporters
@@ -347,7 +346,7 @@ def handle_main_select(obs: Observation) -> list[int]:
                 # 2. Judge if opponent hand >= 6 and our hand <= 4 (hand disruption)
                 # 3. Cyrano if Mega Starmie ex is not yet in hand or in play (tutor search)
                 # 4. Lillie's Determination / Waitress (main draw engines)
-                has_starmie_hand_or_play = True
+                has_starmie_hand_or_play = False
                 if any(c.id == MEGA_STARMIE_ID for c in hand):
                     has_starmie_hand_or_play = True
                 elif my_active and my_active.id == MEGA_STARMIE_ID:

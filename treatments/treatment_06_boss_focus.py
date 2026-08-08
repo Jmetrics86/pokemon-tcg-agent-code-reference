@@ -296,7 +296,6 @@ def handle_main_select(obs: Observation) -> list[int]:
         if hand:
             # Priority order for items/supporters
             priority_items = [
-                MEGA_SIGNAL_ID,
                 BUDDY_BUDDY_POFFIN_ID,  # Search for basics
                 MEGA_SIGNAL_ID,         # Search for evolutions
                 POKEGEAR_ID,            # Find supporters
@@ -317,7 +316,7 @@ def handle_main_select(obs: Observation) -> list[int]:
             # Play supporters if legally allowed
             if can_play_supporter:
                 # Dynamic Supporter Logic
-                boss_priority = False
+                boss_priority = True
                 judge_priority = False
                 
                 my_active = my_state.active[0] if my_state.active else None
@@ -347,7 +346,7 @@ def handle_main_select(obs: Observation) -> list[int]:
                 # 2. Judge if opponent hand >= 6 and our hand <= 4 (hand disruption)
                 # 3. Cyrano if Mega Starmie ex is not yet in hand or in play (tutor search)
                 # 4. Lillie's Determination / Waitress (main draw engines)
-                has_starmie_hand_or_play = True
+                has_starmie_hand_or_play = False
                 if any(c.id == MEGA_STARMIE_ID for c in hand):
                     has_starmie_hand_or_play = True
                 elif my_active and my_active.id == MEGA_STARMIE_ID:

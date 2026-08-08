@@ -17,7 +17,7 @@ from cg.api import (
 )
 
 # ── Trained DSVN Value Head Coefficients (10,614 State Samples) ───────────
-DSVN_BIAS = 0.164533
+DSVN_BIAS = 0.500000
 DSVN_WEIGHTS = [
     0.001550,   # my_active_hp
     0.045745,   # my_active_energy
@@ -296,7 +296,6 @@ def handle_main_select(obs: Observation) -> list[int]:
         if hand:
             # Priority order for items/supporters
             priority_items = [
-                MEGA_SIGNAL_ID,
                 BUDDY_BUDDY_POFFIN_ID,  # Search for basics
                 MEGA_SIGNAL_ID,         # Search for evolutions
                 POKEGEAR_ID,            # Find supporters
@@ -347,7 +346,7 @@ def handle_main_select(obs: Observation) -> list[int]:
                 # 2. Judge if opponent hand >= 6 and our hand <= 4 (hand disruption)
                 # 3. Cyrano if Mega Starmie ex is not yet in hand or in play (tutor search)
                 # 4. Lillie's Determination / Waitress (main draw engines)
-                has_starmie_hand_or_play = True
+                has_starmie_hand_or_play = False
                 if any(c.id == MEGA_STARMIE_ID for c in hand):
                     has_starmie_hand_or_play = True
                 elif my_active and my_active.id == MEGA_STARMIE_ID:
@@ -441,7 +440,7 @@ def handle_main_select(obs: Observation) -> list[int]:
                     if curr_energy == 0:
                         score = 1000
                     elif curr_energy == 1 and opp_act_hp > 120:
-                        score = 950
+                        score = 990
                     else:
                         score = 100 - curr_energy
                 elif target_area == AreaType.BENCH and target_pkmn.id in (MEGA_STARMIE_ID, STARYU_ID):
